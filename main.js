@@ -375,9 +375,10 @@ function getTotalActiveHoursPerMonth(textFile, driverID, month) {
 // ============================================================
 function getRequiredHoursPerMonth(textFile, rateFile, bonusCount, driverID, month) {
     const rateLines = readFileLines(rateFile);
-    let tierLevel = 1; // Default
+    let tierLevel = 1; // Default tier
     
-    // Parse rate file to find driver's tier level (field[3])
+    // Parse rate file: format is driverID,dayName,basePay,tierLevel
+    // Field[3] contains the tier level (1-4)
     for (const line of rateLines) {
         if (line.length > 0) {
             const parts = line.split(',').map(p => p.trim());
@@ -389,6 +390,7 @@ function getRequiredHoursPerMonth(textFile, rateFile, bonusCount, driverID, mont
     }
     
     // Calculate base required hours from tier: baseRequired = 60480 + (tier - 1) * 39600 seconds
+    // Tier 1: 60480s (16.8h), Tier 2: 100080s (27.8h), Tier 3: 139680s (38.8h), Tier 4: 179280s (49.8h)
     const baseRequiredSeconds = 60480 + (tierLevel - 1) * 39600;
     const requiredSeconds = Math.max(0, baseRequiredSeconds - bonusCount * 3600);
     
@@ -408,7 +410,8 @@ function getNetPay(driverID, actualHours, requiredHours, rateFile) {
     let basePay = 0;
     let tierLevel = 1;
     
-    // Parse rate file to find driver's base pay and tier level
+    // Parse rate file: format is driverID,dayName,basePay,tierLevel
+    // Field[2] contains basePay, Field[3] contains tierLevel
     for (const line of rateLines) {
         if (line.length > 0) {
             const parts = line.split(',').map(p => p.trim());
@@ -428,6 +431,7 @@ function getNetPay(driverID, actualHours, requiredHours, rateFile) {
     const missingHours = Math.max(0, requiredHoursNum - actualHoursNum);
     
     // Determine allowed missing hours based on tier level
+    // Tier 1: 0 hrs allowed, Tier 2-3: 20 hrs allowed, Tier 4: 20 hrs allowed
     let allowedMissingHours = 0;
     if (tierLevel === 1) {
         allowedMissingHours = 0;
@@ -442,7 +446,7 @@ function getNetPay(driverID, actualHours, requiredHours, rateFile) {
     // Calculate missing full hours (after allowed missing)
     const missingFullHours = Math.max(0, missingHours - allowedMissingHours);
     
-    // Calculate deduction
+    // Calculate deduction: deductionRate = floor(basePay / 185)
     const deductionRate = Math.floor(basePay / 185);
     const salaryDeduction = missingFullHours * deductionRate;
     const netPay = basePay - salaryDeduction;
