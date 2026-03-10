@@ -69,6 +69,8 @@ function formatSecondsToHMS(totalSeconds) {
 
 /**
  * Check if a date is an Eid date
+ * Eid dates: 2024-04-10, 2025-03-30, 2025-04-15, 2026-03-20 (Fitr)
+ *            2024-06-16, 2025-06-07, 2026-05-27 (Adha)
  */
 function isEidDate(dateString) {
     const eidDates = [
